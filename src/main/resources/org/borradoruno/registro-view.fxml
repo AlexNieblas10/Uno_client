@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+
+<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.borradoruno.controllers.RegistroController"
+      style="-fx-background-color: #f8c8cb;">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;">
+        <Text text="Registrar usuario" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+        <Text text="Personaliza tu perfil antes de jugar"/>
+        
+        <Label text="Apodo de Jugador"/>
+        <TextField fx:id="txtApodo" promptText="Tu nombre aquí"/>
+        
+        <Label text="IP del Servidor (o localhost)"/>
+        <TextField fx:id="txtIp" text="localhost"/>
+        
+        <Label text="Elige tu Avatar"/>
+        <HBox spacing="10">
+            <Button style="-fx-background-color: #3b82f6; -fx-min-width: 40; -fx-min-height: 40;"/>
+            <Button style="-fx-background-color: #facc15; -fx-min-width: 40; -fx-min-height: 40;"/>
+            <Button style="-fx-background-color: #ef4444; -fx-min-width: 40; -fx-min-height: 40;"/>
+            <Button style="-fx-background-color: #22c55e; -fx-min-width: 40; -fx-min-height: 40;"/>
+        </HBox>
+    </VBox>
+
+    <Button text="UNIRSE A PARTIDA" onAction="#onUnirsePartida" 
+            style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 300;"/>
+    <Button text="CREAR PARTIDA" onAction="#onCrearPartida"
+            style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 300;"/>
+
+    <Text text="© 2026 Uno Online 1.12v" style="-fx-fill: gray;"/>
+</VBox>

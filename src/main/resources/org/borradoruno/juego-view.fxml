@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.shape.Ellipse?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.borradoruno.controllers.JuegoController"
+            style="-fx-background-color: linear-gradient(to bottom, #fca5a5, #f87171);">
+    <top>
+        <HBox spacing="20" style="-fx-padding: 15; -fx-background-color: rgba(0,0,0,0.2);">
+            <Text text="UNO ONLINE 2026" style="-fx-fill: white; -fx-font-weight: bold; -fx-font-size: 20;"/>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="ABANDONAR" onAction="#onAbandonar" 
+                    style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-background-radius: 15; -fx-padding: 5 15;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="20">
+            <Label fx:id="lblTurnoActual" text="CARGANDO..." 
+                   style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, black, 2, 0.5, 0, 0);"/>
+            
+            <StackPane>
+                <Ellipse radiusX="200" radiusY="140" fill="rgba(255,255,255,0.15)" stroke="white" strokeWidth="2"/>
+                <VBox alignment="CENTER" spacing="15">
+                    <Label fx:id="lblSentido" text="SENTIDO HORARIO" 
+                           style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Label fx:id="lblCartaActiva" text="8" 
+                           style="-fx-alignment: center;"/>
+                </VBox>
+            </StackPane>
+        </VBox>
+    </center>
+
+    <bottom>
+        <VBox spacing="15" style="-fx-padding: 30; -fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 30 30 0 0;">
+            <HBox spacing="30" alignment="CENTER">
+                <Button text="TIRAR CARTA" style="-fx-background-color: #1f2937; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20;"/>
+                <Button text="UNO!" onAction="#onDecirUno" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20; -fx-border-color: white; -fx-border-radius: 20;"/>
+                <Button text="ROBAR" onAction="#onRobarCarta" style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20;"/>
+            </HBox>
+            <ScrollPane fitToHeight="true" vbarPolicy="NEVER" hbarPolicy="AS_NEEDED" 
+                        style="-fx-background: transparent; -fx-background-color: transparent;">
+                <HBox fx:id="hboxMano" spacing="15" alignment="CENTER" style="-fx-padding: 10 0;">
+                    <!-- Cartas -->
+                </HBox>
+            </ScrollPane>
+        </VBox>
+    </bottom>
+</BorderPane>
