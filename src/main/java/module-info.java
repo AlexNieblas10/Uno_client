@@ -2,6 +2,7 @@ module org.borradoruno {
     requires javafx.controls;
     requires javafx.fxml;
     requires com.google.gson;
+    requires java.prefs;
 
 
     opens org.borradoruno to javafx.fxml;
