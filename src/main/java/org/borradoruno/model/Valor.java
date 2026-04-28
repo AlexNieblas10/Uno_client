@@ -1,4 +1,4 @@
-package org.borradoruno.models;
+package org.borradoruno.model;
 
 public enum Valor {
     CERO, UNO, DOS, TRES, CUATRO, CINCO, SEIS, SIETE, OCHO, NUEVE,

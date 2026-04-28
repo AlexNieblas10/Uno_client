@@ -1,4 +1,4 @@
-package org.borradoruno.models;
+package org.borradoruno.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,6 @@ public class Partida {
         this.pilaDescarte = new PilaDescarte();
     }
 
-    // Getters and Setters
     public String getCodigoSala() { return codigoSala; }
     public void setCodigoSala(String codigoSala) { this.codigoSala = codigoSala; }
     public int getMaxJugadores() { return maxJugadores; }

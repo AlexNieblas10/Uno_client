@@ -1,4 +1,4 @@
-package org.borradoruno.models;
+package org.borradoruno.model;
 
 public class Carta {
     private Color color;
@@ -13,7 +13,6 @@ public class Carta {
         this.puntos = puntos;
     }
 
-    // Getters and Setters
     public Color getColor() { return color; }
     public void setColor(Color color) { this.color = color; }
     public Valor getValor() { return valor; }

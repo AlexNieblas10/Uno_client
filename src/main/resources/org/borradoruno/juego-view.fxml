@@ -6,7 +6,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.shape.Ellipse?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.borradoruno.controllers.JuegoController"
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.borradoruno.controller.JuegoController"
             style="-fx-background-color: linear-gradient(to bottom, #fca5a5, #f87171);">
     <top>
         <HBox spacing="20" style="-fx-padding: 15; -fx-background-color: rgba(0,0,0,0.2);">

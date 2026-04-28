@@ -1,4 +1,4 @@
-package org.borradoruno.models;
+package org.borradoruno.model;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package org.borradoruno.models;
+package org.borradoruno.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,6 @@ public class PilaDescarte {
         this.valorActivo = carta.getValor();
     }
 
-    // Getters and Setters
     public Color getColorActivo() { return colorActivo; }
     public void setColorActivo(Color colorActivo) { this.colorActivo = colorActivo; }
     public Valor getValorActivo() { return valorActivo; }

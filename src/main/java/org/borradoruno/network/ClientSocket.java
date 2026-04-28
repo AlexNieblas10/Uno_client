@@ -11,21 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientSocket {
+
     private static ClientSocket instance;
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private Gson gson;
     private List<ServerObserver> observers;
-    private String nombreLocal;
 
     private ClientSocket() {
         this.gson = new Gson();
         this.observers = new ArrayList<>();
     }
-
-    public String getNombreLocal() { return nombreLocal; }
-    public void setNombreLocal(String nombreLocal) { this.nombreLocal = nombreLocal; }
 
     public static synchronized ClientSocket getInstance() {
         if (instance == null) {
@@ -35,8 +32,10 @@ public class ClientSocket {
     }
 
     public void conectar(String host, int puerto) throws IOException {
-        if (socket != null && !socket.isClosed()) return;
-        
+        if (socket != null && !socket.isClosed()) {
+            return;
+        }
+
         this.socket = new Socket(host, puerto);
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -69,9 +68,13 @@ public class ClientSocket {
         observers.add(observer);
     }
 
+    public void removeObserver(ServerObserver observer) {
+        observers.remove(observer);
+    }
+
     private void notificar(String mensajeJson) {
         Mensaje mensaje = gson.fromJson(mensajeJson, Mensaje.class);
-        for (ServerObserver observer : observers) {
+        for (ServerObserver observer : new ArrayList<>(observers)) {
             observer.onMensajeRecibido(mensaje);
         }
     }
