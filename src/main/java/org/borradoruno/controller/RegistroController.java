@@ -1,17 +1,21 @@
 package org.borradoruno.controller;
 
 import javafx.application.Platform;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.util.Duration;
 import org.borradoruno.config.ServerConfig;
 import org.borradoruno.model.Avatar;
 import org.borradoruno.model.EstadoCliente;
+import org.borradoruno.model.Partida;
 import org.borradoruno.navigation.SceneManager;
 import org.borradoruno.network.ClientSocket;
 import org.borradoruno.network.Mensaje;
+import org.borradoruno.network.MensajeParser;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -26,6 +30,7 @@ public class RegistroController implements ClientSocket.ServerObserver {
 
     private Avatar avatarSeleccionado = Avatar.AZUL;
     private boolean intentandoLogin = false;
+    private PauseTransition timeoutLogin;
 
     @FXML
     public void initialize() {
@@ -58,12 +63,15 @@ public class RegistroController implements ClientSocket.ServerObserver {
         try {
             ClientSocket.getInstance().conectar(ServerConfig.getServerIP(), ServerConfig.getServerPort());
             intentandoLogin = true;
+            bloquearUI(true);
             EstadoCliente.getInstance().setNombreLocal(apodo);
             EstadoCliente.getInstance().setAvatarLocal(avatarSeleccionado);
             ClientSocket.getInstance().enviar("CREATE", new Object[]{apodo, avatarSeleccionado.name()});
+            iniciarTimeoutLogin();
         } catch (IOException e) {
             mostrarError("Error de Conexión", "No se pudo conectar al servidor");
             intentandoLogin = false;
+            bloquearUI(false);
         }
     }
 
@@ -89,13 +97,55 @@ public class RegistroController implements ClientSocket.ServerObserver {
         try {
             ClientSocket.getInstance().conectar(ServerConfig.getServerIP(), ServerConfig.getServerPort());
             intentandoLogin = true;
+            bloquearUI(true);
             EstadoCliente.getInstance().setNombreLocal(apodo);
             EstadoCliente.getInstance().setAvatarLocal(avatarSeleccionado);
             ClientSocket.getInstance().enviar("JOIN", new Object[]{apodo, codigo, avatarSeleccionado.name()});
+            iniciarTimeoutLogin();
         } catch (IOException e) {
             mostrarError("Error de Conexión", "No se pudo conectar al servidor");
             intentandoLogin = false;
+            bloquearUI(false);
         }
+    }
+
+    private void iniciarTimeoutLogin() {
+        cancelarTimeoutLogin();
+
+        timeoutLogin = new PauseTransition(Duration.seconds(8));
+        timeoutLogin.setOnFinished(e -> {
+            if (intentandoLogin) {
+                intentandoLogin = false;
+                bloquearUI(false);
+                mostrarError("Servidor sin respuesta",
+                    "El servidor no respondió a tiempo.\n\nPosibles causas:\n" +
+                    "• Tu red bloquea el puerto 5050\n" +
+                    "• El servidor está saturado\n" +
+                    "• Tu conexión es muy lenta\n\n" +
+                    "Intenta de nuevo en unos segundos.");
+                try {
+                    ClientSocket.getInstance().desconectar();
+                } catch (Exception ex) { /* ignore */ }
+            }
+        });
+        timeoutLogin.play();
+    }
+
+    private void cancelarTimeoutLogin() {
+        if (timeoutLogin != null) {
+            timeoutLogin.stop();
+            timeoutLogin = null;
+        }
+    }
+
+    private void bloquearUI(boolean bloquear) {
+        Platform.runLater(() -> {
+            txtApodo.setDisable(bloquear);
+            btnAvatarAzul.setDisable(bloquear);
+            btnAvatarAmarillo.setDisable(bloquear);
+            btnAvatarRojo.setDisable(bloquear);
+            btnAvatarVerde.setDisable(bloquear);
+        });
     }
 
     private boolean validarApodo() {
@@ -118,10 +168,33 @@ public class RegistroController implements ClientSocket.ServerObserver {
     @Override
     public void onMensajeRecibido(Mensaje mensaje) {
         if (mensaje.getTipo().equals("ESTADO_PARTIDA") && intentandoLogin) {
+            if (mensaje.getDatos() == null) {
+                return;
+            }
+
+            Partida partida;
+            try {
+                partida = MensajeParser.parsearPartida(mensaje.getDatos());
+            } catch (Exception e) {
+                System.err.println("Error parseando partida: " + e.getMessage());
+                return;
+            }
+
+            if (partida == null || partida.getCodigoSala() == null
+                    || partida.getJugadores() == null || partida.getJugadores().isEmpty()) {
+                System.out.println("Estado de partida incompleto, esperando...");
+                return;
+            }
+
+            cancelarTimeoutLogin();
+            EstadoCliente.getInstance().setPartidaActual(partida);
             intentandoLogin = false;
             ClientSocket.getInstance().removeObserver(this);
             SceneManager.getInstance().cambiarVista(SceneManager.VIEW_SALA);
+
         } else if (mensaje.getTipo().equals("ERROR") && intentandoLogin) {
+            cancelarTimeoutLogin();
+            bloquearUI(false);
             String msg = mensaje.getDatos() != null ? mensaje.getDatos().toString() : "Error desconocido";
             mostrarError("Error del Servidor", msg);
             intentandoLogin = false;

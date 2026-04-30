@@ -33,6 +33,14 @@ public class SalaController implements ClientSocket.ServerObserver {
     @FXML
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
+
+        // Si el controller anterior ya guardó el estado, mostrarlo de inmediato sin esperar al servidor
+        Partida estadoActual = EstadoCliente.getInstance().getPartidaActual();
+        if (estadoActual != null) {
+            Platform.runLater(() -> actualizarInterfaz(estadoActual));
+        }
+
+        // Pedir estado fresco de todas formas (puede haber cambiado mientras cargaba la vista)
         ClientSocket.getInstance().enviar("SOLICITAR_ESTADO", null);
     }
 
