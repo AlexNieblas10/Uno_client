@@ -11,6 +11,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.borradoruno.model.Avatar;
 import org.borradoruno.model.EstadoCliente;
+import org.borradoruno.sound.SoundManager;
 import org.borradoruno.model.EstadoPartida;
 import org.borradoruno.model.Jugador;
 import org.borradoruno.model.Partida;
@@ -104,7 +105,17 @@ public class SalaController implements ClientSocket.ServerObserver {
             vboxConfig.setManaged(soyAnfitrion);
         }
 
-        if (soyAnfitrion) {
+        boolean partidaFinalizada = partida.getEstado() == EstadoPartida.FINALIZADA;
+
+        if (partidaFinalizada && soyAnfitrion) {
+            btnAccion.setText("NUEVA PARTIDA");
+            btnAccion.setStyle("-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+            btnAccion.setDisable(false);
+        } else if (partidaFinalizada) {
+            btnAccion.setText("ESPERANDO ANFITRIÓN...");
+            btnAccion.setStyle("-fx-background-color: #9ca3af; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+            btnAccion.setDisable(true);
+        } else if (soyAnfitrion) {
             btnAccion.setText("INICIAR PARTIDA");
             boolean todosListos = partida.getJugadores().stream()
                     .filter(j -> !j.isEsAnfitrion())
@@ -170,13 +181,18 @@ public class SalaController implements ClientSocket.ServerObserver {
 
     @FXML
     private void onAccionPrincipal() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
         Jugador yo = EstadoCliente.getInstance().getJugadorLocal();
-        if (yo == null) return;
+        Partida partida = EstadoCliente.getInstance().getPartidaActual();
+        if (yo == null || partida == null) return;
+
+        // Partida terminada: solo el anfitrión puede reiniciar
+        if (partida.getEstado() == EstadoPartida.FINALIZADA && yo.isEsAnfitrion()) {
+            ClientSocket.getInstance().enviar("REINICIAR_PARTIDA", null);
+            return;
+        }
 
         if (yo.isEsAnfitrion()) {
-            Partida partida = EstadoCliente.getInstance().getPartidaActual();
-            if (partida == null) return;
-
             boolean todosListos = partida.getJugadores().stream()
                     .filter(j -> !j.isEsAnfitrion())
                     .allMatch(Jugador::isListo);

@@ -1,6 +1,7 @@
 module org.borradoruno {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.media;
     requires com.google.gson;
     requires java.prefs;
 
@@ -13,4 +14,5 @@ module org.borradoruno {
     exports org.borradoruno.model;
     exports org.borradoruno.controller;
     exports org.borradoruno.network;
+    exports org.borradoruno.sound;
 }
