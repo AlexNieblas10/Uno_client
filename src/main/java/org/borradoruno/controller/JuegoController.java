@@ -1,12 +1,17 @@
 package org.borradoruno.controller;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.util.Duration;
 import org.borradoruno.model.Avatar;
 import org.borradoruno.model.Carta;
 import org.borradoruno.model.Color;
@@ -22,7 +27,9 @@ import org.borradoruno.network.Mensaje;
 import org.borradoruno.network.MensajeParser;
 import org.borradoruno.sound.SoundManager;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JuegoController implements ClientSocket.ServerObserver {
@@ -37,24 +44,37 @@ public class JuegoController implements ClientSocket.ServerObserver {
     private static final double CARD_OVERLAP = 35;
     private static final double HOVER_LIFT   = 25;
 
-    // Pila y turno
-    @FXML private Pane  paneMano;
-    @FXML private Label lblCartaActiva;
-    @FXML private Label lblTurnoActual;
-    @FXML private Label lblSentido;
-    @FXML private Label lblFlechaArriba;
-    @FXML private Label lblFlechaAbajo;
+    private static final double TIEMPO_POR_TURNO_SEGUNDOS = 10.0;
 
-    // Esquinas con otros jugadores
+    // ── FXML ─────────────────────────────────────────────────────────────────
+
+    @FXML private Pane        paneMano;
+    @FXML private Label       lblCartaActiva;
+    @FXML private Label       lblTurnoActual;
+    @FXML private Label       lblSentido;
+    @FXML private Label       lblFlechaArriba;
+    @FXML private Label       lblFlechaAbajo;
+    @FXML private ProgressBar barraTiempo;
+    @FXML private Label       lblTiempoRestante;
+    @FXML private Button      btnRobar;
+
     @FXML private HBox  hboxJugadorIzquierda;
     @FXML private HBox  hboxJugadorDerecha;
     @FXML private HBox  hboxJugadorAbajoDerecha;
     @FXML private Label lblJugadorTu;
 
+    // ── Estado interno ────────────────────────────────────────────────────────
+
+    private Timeline timeline;
+    private final Set<String> unoYaNotificados = new HashSet<>();
+
+    // ── Ciclo de vida ─────────────────────────────────────────────────────────
+
     @FXML
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
         ClientSocket.getInstance().enviar("SOLICITAR_ESTADO", null);
+        iniciarTimerVisual();
     }
 
     @Override
@@ -70,12 +90,21 @@ public class JuegoController implements ClientSocket.ServerObserver {
         }
     }
 
+    // ── Actualización principal ───────────────────────────────────────────────
+
     private void actualizarInterfaz(Partida partida) {
         actualizarPilaDescarte(partida);
         actualizarTurnoYSentido(partida);
         actualizarFlechasSentido(partida);
         renderizarJugadores(partida);
         renderizarMano(EstadoCliente.getInstance().getJugadorLocal());
+        detectarAvisoUno(partida);
+
+        boolean esMiTurno = EstadoCliente.getInstance().esMiTurno();
+        if (btnRobar != null) {
+            btnRobar.setDisable(!esMiTurno);
+            btnRobar.setOpacity(esMiTurno ? 1.0 : 0.5);
+        }
     }
 
     // ── Pila central ─────────────────────────────────────────────────────────
@@ -132,6 +161,106 @@ public class JuegoController implements ClientSocket.ServerObserver {
         lblSentido.setText("SENTIDO " + (horario ? "HORARIO" : "ANTIHORARIO"));
     }
 
+    // ── Timer visual ─────────────────────────────────────────────────────────
+
+    private void iniciarTimerVisual() {
+        if (timeline != null) timeline.stop();
+
+        timeline = new Timeline(new KeyFrame(Duration.millis(100), e -> actualizarBarraTiempo()));
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private void actualizarBarraTiempo() {
+        Partida partida = EstadoCliente.getInstance().getPartidaActual();
+        if (partida == null || partida.getTurnoIniciadoEn() == 0) {
+            barraTiempo.setProgress(1.0);
+            lblTiempoRestante.setText("--");
+            return;
+        }
+
+        long ahora = System.currentTimeMillis();
+        double transcurrido = (ahora - partida.getTurnoIniciadoEn()) / 1000.0;
+        double restante = Math.max(0, TIEMPO_POR_TURNO_SEGUNDOS - transcurrido);
+        double progress = Math.max(0, restante / TIEMPO_POR_TURNO_SEGUNDOS);
+
+        barraTiempo.setProgress(progress);
+        lblTiempoRestante.setText(String.format("%.0fs", Math.ceil(restante)));
+
+        String colorBarra;
+        if (progress > 0.5)       colorBarra = "#22c55e";
+        else if (progress > 0.25) colorBarra = "#f59e0b";
+        else                      colorBarra = "#ef4444";
+        barraTiempo.setStyle("-fx-accent: " + colorBarra + ";");
+
+        if (restante <= 3 && restante > 2.9 && EstadoCliente.getInstance().esMiTurno()) {
+            SoundManager.getInstance().play(SoundManager.SOUND_TURN_WARNING);
+        }
+    }
+
+    private void detenerTimer() {
+        if (timeline != null) {
+            timeline.stop();
+            timeline = null;
+        }
+    }
+
+    // ── Alerta UNO ────────────────────────────────────────────────────────────
+
+    private void detectarAvisoUno(Partida partida) {
+        for (Jugador j : partida.getJugadores()) {
+            if (j.isDijoUNO() && j.getMano().size() == 1
+                    && !unoYaNotificados.contains(j.getNombre())) {
+                unoYaNotificados.add(j.getNombre());
+                mostrarAlertaUno(j);
+            }
+            if (j.getMano().size() != 1) {
+                unoYaNotificados.remove(j.getNombre());
+            }
+        }
+    }
+
+    private void mostrarAlertaUno(Jugador jugador) {
+        SoundManager.getInstance().play(SoundManager.SOUND_UNO_ALERT);
+
+        Platform.runLater(() -> {
+            Label toast = new Label("¡" + jugador.getNombre() + " dijo UNO! 🎴");
+            toast.setStyle(
+                    "-fx-background-color: #ef4444;"
+                    + "-fx-text-fill: white;"
+                    + "-fx-font-size: 24;"
+                    + "-fx-font-weight: bold;"
+                    + "-fx-padding: 20 40;"
+                    + "-fx-background-radius: 30;"
+                    + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0.5, 0, 5);"
+            );
+
+            javafx.scene.Parent root = paneMano.getScene().getRoot();
+            if (root instanceof javafx.scene.layout.BorderPane bp) {
+                javafx.scene.Node center = bp.getCenter();
+                if (center instanceof javafx.scene.layout.StackPane sp) {
+                    sp.getChildren().add(toast);
+
+                    javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                            Duration.millis(300), toast);
+                    fadeIn.setFromValue(0);
+                    fadeIn.setToValue(1);
+
+                    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+                            Duration.millis(1500));
+
+                    javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+                            Duration.millis(300), toast);
+                    fadeOut.setFromValue(1);
+                    fadeOut.setToValue(0);
+                    fadeOut.setOnFinished(e -> sp.getChildren().remove(toast));
+
+                    new javafx.animation.SequentialTransition(fadeIn, pause, fadeOut).play();
+                }
+            }
+        });
+    }
+
     // ── Jugadores en las esquinas ─────────────────────────────────────────────
 
     private void renderizarJugadores(Partida partida) {
@@ -162,7 +291,6 @@ public class JuegoController implements ClientSocket.ServerObserver {
             }
         }
 
-        // Etiqueta "Tú" en la esquina inferior izquierda
         Jugador yo = partida.getJugadores().stream()
                 .filter(j -> j.getNombre().equals(miNombre))
                 .findFirst().orElse(null);
@@ -258,7 +386,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
 
             btn.setOnMouseEntered(e -> {
                 javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
-                        javafx.util.Duration.millis(150), btn);
+                        Duration.millis(150), btn);
                 tt.setToY(-HOVER_LIFT);
                 tt.play();
                 btn.toFront();
@@ -266,7 +394,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
 
             btn.setOnMouseExited(e -> {
                 javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
-                        javafx.util.Duration.millis(150), btn);
+                        Duration.millis(150), btn);
                 tt.setToY(0);
                 tt.play();
             });
@@ -398,6 +526,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
 
     @FXML
     private void onAbandonar() {
+        detenerTimer();
         ClientSocket.getInstance().enviar("ABANDONAR_SALA", null);
         new Thread(() -> {
             try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -407,6 +536,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
     }
 
     private void mostrarFinDeJuego(Partida partida) {
+        detenerTimer();
         SoundManager.getInstance().play(SoundManager.SOUND_WIN);
         Platform.runLater(() -> {
             String ganador = "Desconocido";

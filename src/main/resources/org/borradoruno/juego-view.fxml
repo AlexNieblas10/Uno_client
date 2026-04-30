@@ -48,6 +48,13 @@
                 <Label fx:id="lblTurnoActual" text="CARGANDO..."
                        style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, black, 2, 0.5, 0, 0);"/>
 
+                <!-- Barra de tiempo -->
+                <HBox alignment="CENTER" spacing="10" maxWidth="300">
+                    <Label fx:id="lblTiempoRestante" text="--"
+                           style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white; -fx-min-width: 40;"/>
+                    <ProgressBar fx:id="barraTiempo" prefWidth="240" prefHeight="14" progress="1.0"/>
+                </HBox>
+
                 <StackPane>
                     <Ellipse radiusX="200" radiusY="140" fill="rgba(255,255,255,0.15)" stroke="white" strokeWidth="2"/>
 
@@ -76,7 +83,7 @@
             <HBox spacing="30" alignment="CENTER">
                 <Button text="UNO!" onAction="#onDecirUno"
                         style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20; -fx-border-color: white; -fx-border-radius: 20;"/>
-                <Button text="ROBAR" onAction="#onRobarCarta"
+                <Button fx:id="btnRobar" text="ROBAR" onAction="#onRobarCarta"
                         style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20;"/>
             </HBox>
             <Pane fx:id="paneMano" prefHeight="160" minHeight="160" style="-fx-padding: 10 0;"/>
