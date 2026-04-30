@@ -94,18 +94,26 @@ public class ClientHandler implements Runnable {
                     String cJson = gson.toJson(mensaje.getDatos());
                     org.borradoruno.models.Carta cartaTirada = gson.fromJson(cJson, org.borradoruno.models.Carta.class);
 
-                    JuegoManager.getInstance().procesarJugada(this.jugador, cartaTirada);
-                    server.broadcast(gson.toJson(new Mensaje("ESTADO_PARTIDA", JuegoManager.getInstance().getPartidaActual())));
+                    if (JuegoManager.getInstance().procesarJugada(this.jugador, cartaTirada)) {
+                        server.broadcast(gson.toJson(new Mensaje("ESTADO_PARTIDA", JuegoManager.getInstance().getPartidaActual())));
+                    } else {
+                        enviar(gson.toJson(new Mensaje("ERROR", "Movimiento inválido")));
+                    }
                     break;
                 case "TIRAR_COMODIN":
-                    // El mensaje contiene [Carta, Color]
-                    com.google.gson.JsonArray arr = gson.toJsonTree(mensaje.getDatos()).getAsJsonArray();
-                    org.borradoruno.models.Carta comodin = gson.fromJson(arr.get(0), org.borradoruno.models.Carta.class);
-                    String colorStr = arr.get(1).getAsString();
-                    org.borradoruno.models.Color colorElegido = org.borradoruno.models.Color.valueOf(colorStr);
+                    // El mensaje contiene [Carta, Color] en un objeto List
+                    java.util.List<?> listaComodin = (java.util.List<?>) mensaje.getDatos();
+                    String jsonCarta = gson.toJson(listaComodin.get(0));
+                    String jsonColor = gson.toJson(listaComodin.get(1));
+                    
+                    org.borradoruno.models.Carta comodin = gson.fromJson(jsonCarta, org.borradoruno.models.Carta.class);
+                    org.borradoruno.models.Color colorElegido = gson.fromJson(jsonColor, org.borradoruno.models.Color.class);
 
-                    JuegoManager.getInstance().procesarJugadaComodin(this.jugador, comodin, colorElegido);
-                    server.broadcast(gson.toJson(new Mensaje("ESTADO_PARTIDA", JuegoManager.getInstance().getPartidaActual())));
+                    if (comodin != null && colorElegido != null && JuegoManager.getInstance().procesarJugadaComodin(this.jugador, comodin, colorElegido)) {
+                        server.broadcast(gson.toJson(new Mensaje("ESTADO_PARTIDA", JuegoManager.getInstance().getPartidaActual())));
+                    } else {
+                        enviar(gson.toJson(new Mensaje("ERROR", "Movimiento inválido con comodín")));
+                    }
                     break;
                 case "ROBAR_CARTA":
                     JuegoManager.getInstance().robarCarta(this.jugador);

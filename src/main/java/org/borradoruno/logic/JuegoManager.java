@@ -79,16 +79,22 @@ public class JuegoManager {
         return coincide;
     }
 
-    public synchronized void procesarJugada(Jugador jugador, org.borradoruno.models.Carta carta) {
-        if (!validarJugada(jugador, carta)) return;
+    public synchronized boolean procesarJugada(Jugador jugador, org.borradoruno.models.Carta carta) {
+        if (!validarJugada(jugador, carta)) return false;
 
-        // Quitar de la mano (buscamos por valor y color para ser precisos)
-        jugador.getMano().removeIf(c -> c.getColor() == carta.getColor() && c.getValor() == carta.getValor());
+        // Validar posesión: solo proceder si la carta realmente estaba en la mano
+        boolean removida = jugador.getMano().removeIf(c -> 
+            c.getColor() == carta.getColor() && c.getValor() == carta.getValor());
+        
+        if (!removida) {
+            System.err.println("Error: El jugador " + jugador.getNombre() + " intentó tirar una carta que no tiene: " + carta.getValor());
+            return false;
+        }
 
         // Agregar a la pila
         partidaActual.getPilaDescarte().agregarCarta(carta);
 
-        // Si es comodín, asignamos un color por defecto para no trabar el juego
+        // Si es comodín, asignamos un color por defecto
         if (carta.getColor() == org.borradoruno.models.Color.NEGRO) {
             partidaActual.getPilaDescarte().setColorActivo(org.borradoruno.models.Color.ROJO);
         }
@@ -97,27 +103,38 @@ public class JuegoManager {
         verificarGanador(jugador);
         avanzarTurno();
         System.out.println("Jugada exitosa de " + jugador.getNombre() + ". Siguiente turno: " + partidaActual.getTurnoActual());
+        return true;
     }
 
-    public synchronized void procesarJugadaComodin(Jugador jugador, org.borradoruno.models.Carta comodin, org.borradoruno.models.Color colorElegido) {
-        if (!validarJugada(jugador, comodin)) return;
+    public synchronized boolean procesarJugadaComodin(Jugador jugador, org.borradoruno.models.Carta comodin, org.borradoruno.models.Color colorElegido) {
+        if (!validarJugada(jugador, comodin)) return false;
 
-        // Quitar de la mano
-        jugador.getMano().removeIf(c -> c.getColor() == comodin.getColor() && c.getValor() == comodin.getValor());
+        // Validar posesión
+        boolean removida = jugador.getMano().removeIf(c -> 
+            c.getColor() == comodin.getColor() && c.getValor() == comodin.getValor());
+
+        if (!removida) {
+            System.err.println("Error: El jugador " + jugador.getNombre() + " intentó tirar un comodín que no tiene: " + comodin.getValor());
+            return false;
+        }
 
         // Agregar a la pila
         partidaActual.getPilaDescarte().agregarCarta(comodin);
-
-        // Establecer el color elegido por el jugador
         partidaActual.getPilaDescarte().setColorActivo(colorElegido);
 
         aplicarEfectos(comodin);
         verificarGanador(jugador);
         avanzarTurno();
         System.out.println("Jugada exitosa de " + jugador.getNombre() + " con comodín. Color elegido: " + colorElegido + ". Siguiente turno: " + partidaActual.getTurnoActual());
+        return true;
     }
 
     private void aplicarEfectos(org.borradoruno.models.Carta carta) {
+        if (carta == null || carta.getValor() == null) {
+            System.err.println("Error: Se intentó aplicar efectos a una carta nula o con valor nulo.");
+            return;
+        }
+        
         switch (carta.getValor()) {
             case REVERSA:
                 partidaActual.setSentidoJuego(
@@ -126,17 +143,31 @@ public class JuegoManager {
                 );
                 break;
             case MAS_DOS:
-                partidaActual.setCartasAComer(partidaActual.getCartasAComer() + 2);
+                // Castigo automático: el siguiente jugador roba 2 y pierde su turno
+                avanzarTurno();
+                Jugador victimaDos = partidaActual.getJugadores().get(partidaActual.getTurnoActual());
+                System.out.println(victimaDos.getNombre() + " roba 2 automáticamente y salta su turno");
+                for (int i = 0; i < 2; i++) {
+                    if (partidaActual.getMazo().getCartasRestantes() == 0) reciclarMazo();
+                    victimaDos.getMano().add(partidaActual.getMazo().robar());
+                }
                 break;
             case BLOQUEO:
                 // Saltamos un turno extra antes de avanzar el normal
                 avanzarTurno();
                 break;
             case COMODIN_MAS_CUATRO:
-                partidaActual.setCartasAComer(partidaActual.getCartasAComer() + 4);
+                // Castigo automático: el siguiente jugador roba 4 y pierde su turno
+                avanzarTurno();
+                Jugador victimaCuatro = partidaActual.getJugadores().get(partidaActual.getTurnoActual());
+                System.out.println(victimaCuatro.getNombre() + " roba 4 automáticamente y salta su turno");
+                for (int i = 0; i < 4; i++) {
+                    if (partidaActual.getMazo().getCartasRestantes() == 0) reciclarMazo();
+                    victimaCuatro.getMano().add(partidaActual.getMazo().robar());
+                }
                 break;
             case COMODIN_COLOR:
-                // Aquí se debería pedir color, por ahora se deja el que tiene la carta
+                // No tiene efectos directos en el turno
                 break;
         }
     }
@@ -148,6 +179,7 @@ public class JuegoManager {
     }
 
     public synchronized void robarCarta(Jugador jugador) {
+        // En este sistema de castigos automáticos, robarCarta siempre roba exactamente 1.
         if (partidaActual.getMazo().getCartasRestantes() == 0) {
             reciclarMazo();
         }
