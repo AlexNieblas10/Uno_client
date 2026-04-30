@@ -10,8 +10,8 @@ public class ServerConfig {
     private static final Preferences prefs = Preferences.userNodeForPackage(ServerConfig.class);
     private static final String KEY_SERVER_IP = "server_ip";
     private static final String KEY_SERVER_PORT = "server_port";
-    private static final String DEFAULT_IP = "localhost";
-    private static final int DEFAULT_PORT = 5050;
+    private static final String DEFAULT_IP = "144.24.16.242";
+    private static final int DEFAULT_PORT = 443;
 
     /**
      * Obtiene la IP del servidor guardada o retorna localhost
