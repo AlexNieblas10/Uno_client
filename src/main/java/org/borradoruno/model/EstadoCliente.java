@@ -4,6 +4,7 @@ public class EstadoCliente {
     private static EstadoCliente instance;
 
     private String nombreLocal;
+    private Avatar avatarLocal;
     private Partida partidaActual;
 
     private EstadoCliente() {}
@@ -17,6 +18,9 @@ public class EstadoCliente {
 
     public String getNombreLocal() { return nombreLocal; }
     public void setNombreLocal(String nombreLocal) { this.nombreLocal = nombreLocal; }
+
+    public Avatar getAvatarLocal() { return avatarLocal; }
+    public void setAvatarLocal(Avatar avatarLocal) { this.avatarLocal = avatarLocal; }
 
     public Partida getPartidaActual() { return partidaActual; }
     public void setPartidaActual(Partida partida) { this.partidaActual = partida; }
