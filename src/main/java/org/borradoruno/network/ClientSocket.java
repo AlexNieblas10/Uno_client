@@ -16,8 +16,10 @@ public class ClientSocket {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private Gson gson;
-    private List<ServerObserver> observers;
+    private final Gson gson;
+    private final List<ServerObserver> observers;
+    private Thread heartbeatThread;
+    private volatile boolean conectado = false;
 
     private ClientSocket() {
         this.gson = new Gson();
@@ -39,8 +41,51 @@ public class ClientSocket {
         this.socket = new Socket(host, puerto);
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.conectado = true;
+
+        Mensaje handshake = new Mensaje("HANDSHAKE", "UNO-CLIENT-V1");
+        out.println(gson.toJson(handshake));
 
         new Thread(this::escuchar).start();
+        iniciarHeartbeat();
+    }
+
+    private void iniciarHeartbeat() {
+        heartbeatThread = new Thread(() -> {
+            while (conectado && socket != null && !socket.isClosed()) {
+                try {
+                    Thread.sleep(10_000);
+                    if (conectado && out != null && !socket.isClosed()) {
+                        enviar("PING", null);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    break;
+                }
+            }
+        });
+        heartbeatThread.setDaemon(true);
+        heartbeatThread.start();
+    }
+
+    public void desconectar() {
+        conectado = false;
+
+        if (heartbeatThread != null) {
+            heartbeatThread.interrupt();
+        }
+
+        try { if (out != null) out.close(); } catch (Exception ignored) {}
+        try { if (in != null) in.close(); } catch (Exception ignored) {}
+        try { if (socket != null && !socket.isClosed()) socket.close(); } catch (Exception ignored) {}
+
+        observers.clear();
+    }
+
+    public boolean isConectado() {
+        return conectado && socket != null && !socket.isClosed();
     }
 
     private void escuchar() {
@@ -51,7 +96,7 @@ public class ClientSocket {
                 Platform.runLater(() -> notificar(finalInputLine));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            // Socket cerrado limpiamente o error de red
         }
     }
 
