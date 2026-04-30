@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.borradoruno.navigation.SceneManager;
 import org.borradoruno.network.ClientSocket;
+import org.borradoruno.sound.MusicManager;
 
 import java.io.IOException;
 
@@ -20,13 +21,17 @@ public class ClientApp extends Application {
         stage.setTitle("UNO Online");
         stage.setScene(scene);
 
-        stage.setOnCloseRequest(event -> ClientSocket.getInstance().desconectar());
+        stage.setOnCloseRequest(event -> {
+            MusicManager.getInstance().stop();
+            ClientSocket.getInstance().desconectar();
+        });
 
         stage.show();
     }
 
     @Override
     public void stop() throws Exception {
+        MusicManager.getInstance().stop();
         ClientSocket.getInstance().desconectar();
         super.stop();
     }

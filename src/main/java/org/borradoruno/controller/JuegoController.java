@@ -25,6 +25,7 @@ import org.borradoruno.navigation.SceneManager;
 import org.borradoruno.network.ClientSocket;
 import org.borradoruno.network.Mensaje;
 import org.borradoruno.network.MensajeParser;
+import org.borradoruno.sound.MusicManager;
 import org.borradoruno.sound.SoundManager;
 
 import java.util.HashSet;
@@ -75,6 +76,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
         ClientSocket.getInstance().addObserver(this);
         ClientSocket.getInstance().enviar("SOLICITAR_ESTADO", null);
         iniciarTimerVisual();
+        MusicManager.getInstance().play(MusicManager.MUSIC_GAME);
     }
 
     @Override

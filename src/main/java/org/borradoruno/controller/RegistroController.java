@@ -16,6 +16,8 @@ import org.borradoruno.navigation.SceneManager;
 import org.borradoruno.network.ClientSocket;
 import org.borradoruno.network.Mensaje;
 import org.borradoruno.network.MensajeParser;
+import org.borradoruno.sound.MusicManager;
+import org.borradoruno.sound.SoundManager;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -36,12 +38,32 @@ public class RegistroController implements ClientSocket.ServerObserver {
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
         actualizarBordeAvatar();
+        MusicManager.getInstance().play(MusicManager.MUSIC_MENU);
     }
 
-    @FXML private void onSeleccionarAvatarAzul()     { avatarSeleccionado = Avatar.AZUL;     actualizarBordeAvatar(); }
-    @FXML private void onSeleccionarAvatarAmarillo() { avatarSeleccionado = Avatar.AMARILLO; actualizarBordeAvatar(); }
-    @FXML private void onSeleccionarAvatarRojo()     { avatarSeleccionado = Avatar.ROJO;     actualizarBordeAvatar(); }
-    @FXML private void onSeleccionarAvatarVerde()    { avatarSeleccionado = Avatar.VERDE;    actualizarBordeAvatar(); }
+    @FXML private void onSeleccionarAvatarAzul() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        avatarSeleccionado = Avatar.AZUL;
+        actualizarBordeAvatar();
+    }
+
+    @FXML private void onSeleccionarAvatarAmarillo() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        avatarSeleccionado = Avatar.AMARILLO;
+        actualizarBordeAvatar();
+    }
+
+    @FXML private void onSeleccionarAvatarRojo() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        avatarSeleccionado = Avatar.ROJO;
+        actualizarBordeAvatar();
+    }
+
+    @FXML private void onSeleccionarAvatarVerde() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        avatarSeleccionado = Avatar.VERDE;
+        actualizarBordeAvatar();
+    }
 
     private void actualizarBordeAvatar() {
         String borde = "-fx-border-color: #1d4ed8; -fx-border-width: 3; -fx-border-radius: 8;";
@@ -57,6 +79,7 @@ public class RegistroController implements ClientSocket.ServerObserver {
 
     @FXML
     private void onCrearPartida() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
         if (!validarApodo()) return;
 
         String apodo = txtApodo.getText().trim();
@@ -77,6 +100,7 @@ public class RegistroController implements ClientSocket.ServerObserver {
 
     @FXML
     private void onUnirsePartida() {
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
         if (!validarApodo()) return;
 
         TextInputDialog dialog = new TextInputDialog();

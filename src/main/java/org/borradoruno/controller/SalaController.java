@@ -11,6 +11,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.borradoruno.model.Avatar;
 import org.borradoruno.model.EstadoCliente;
+import org.borradoruno.sound.MusicManager;
 import org.borradoruno.sound.SoundManager;
 import org.borradoruno.model.EstadoPartida;
 import org.borradoruno.model.Jugador;
@@ -29,10 +30,25 @@ public class SalaController implements ClientSocket.ServerObserver {
     @FXML private Label lblContador;
     @FXML private TextField txtCodigoSala;
     @FXML private Button btnMax2, btnMax3, btnMax4;
+    @FXML private javafx.scene.control.Slider sliderMusica;
+    @FXML private javafx.scene.control.Slider sliderEfectos;
 
     @FXML
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
+
+        MusicManager.getInstance().play(MusicManager.MUSIC_MENU);
+
+        if (sliderMusica != null) {
+            sliderMusica.setValue(MusicManager.getInstance().getVolumen() * 100);
+            sliderMusica.valueProperty().addListener((obs, oldVal, newVal) ->
+                    MusicManager.getInstance().setVolumen(newVal.doubleValue() / 100.0));
+        }
+        if (sliderEfectos != null) {
+            sliderEfectos.setValue(SoundManager.getInstance().getVolumen() * 100);
+            sliderEfectos.valueProperty().addListener((obs, oldVal, newVal) ->
+                    SoundManager.getInstance().setVolumen(newVal.doubleValue() / 100.0));
+        }
 
         // Si el controller anterior ya guardó el estado, mostrarlo de inmediato sin esperar al servidor
         Partida estadoActual = EstadoCliente.getInstance().getPartidaActual();
@@ -47,8 +63,19 @@ public class SalaController implements ClientSocket.ServerObserver {
     @Override
     public void onMensajeRecibido(Mensaje mensaje) {
         if (mensaje.getTipo().equals("ESTADO_PARTIDA")) {
+            Partida partidaAnterior = EstadoCliente.getInstance().getPartidaActual();
             Partida partida = MensajeParser.parsearPartida(mensaje.getDatos());
             EstadoCliente.getInstance().setPartidaActual(partida);
+
+            boolean partidaAcabaDeIniciar =
+                    partida.getEstado() == EstadoPartida.EN_CURSO
+                    && (partidaAnterior == null
+                        || partidaAnterior.getEstado() != EstadoPartida.EN_CURSO);
+
+            if (partidaAcabaDeIniciar) {
+                SoundManager.getInstance().play(SoundManager.SOUND_SHUFFLE);
+            }
+
             Platform.runLater(() -> actualizarInterfaz(partida));
 
             if (partida.getEstado() == EstadoPartida.EN_CURSO) {
@@ -173,9 +200,9 @@ public class SalaController implements ClientSocket.ServerObserver {
         if (btnMax4 != null) btnMax4.setStyle(max == 4 ? selected : unselected);
     }
 
-    @FXML private void onSetMax2() { ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 2); }
-    @FXML private void onSetMax3() { ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 3); }
-    @FXML private void onSetMax4() { ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 4); }
+    @FXML private void onSetMax2() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 2); }
+    @FXML private void onSetMax3() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 3); }
+    @FXML private void onSetMax4() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 4); }
 
     @FXML
     private void onAbandonar() {
