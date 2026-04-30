@@ -9,6 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import org.borradoruno.model.Avatar;
 import org.borradoruno.model.EstadoCliente;
 import org.borradoruno.model.EstadoPartida;
 import org.borradoruno.model.Jugador;
@@ -53,12 +54,16 @@ public class SalaController implements ClientSocket.ServerObserver {
         boolean soyAnfitrion = false;
 
         for (Jugador j : partida.getJugadores()) {
-            if (j.getNombre().equals(miNombre) && j.isEsAnfitrion()) {
-                soyAnfitrion = true;
-            }
+            if (j.getNombre().equals(miNombre) && j.isEsAnfitrion()) soyAnfitrion = true;
 
             HBox item = new HBox(10);
-            item.setStyle("-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 5; -fx-alignment: center-left; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 1);");
+            item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            item.setStyle("-fx-background-color: #f3f4f6; -fx-padding: 12; -fx-background-radius: 30;");
+
+            Region avatarCircle = new Region();
+            avatarCircle.setMinSize(35, 35);
+            avatarCircle.setMaxSize(35, 35);
+            avatarCircle.setStyle("-fx-background-color: " + mapAvatarToCss(j.getAvatar()) + "; -fx-background-radius: 30;");
 
             Label name = new Label(j.getNombre());
             name.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
@@ -66,10 +71,22 @@ public class SalaController implements ClientSocket.ServerObserver {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
-            Label role = new Label(j.isEsAnfitrion() ? "Anfitrión" : "Listo!");
-            role.setStyle("-fx-text-fill: " + (j.isEsAnfitrion() ? "#ef4444" : "#22c55e") + "; -fx-font-weight: bold;");
+            String estadoTexto;
+            String estadoColor;
+            if (j.isEsAnfitrion()) {
+                estadoTexto = "Anfitrión";
+                estadoColor = "#ef4444";
+            } else if (j.isListo()) {
+                estadoTexto = "Listo!";
+                estadoColor = "#22c55e";
+            } else {
+                estadoTexto = "Pendiente";
+                estadoColor = "#9ca3af";
+            }
+            Label role = new Label(estadoTexto);
+            role.setStyle("-fx-text-fill: " + estadoColor + "; -fx-font-weight: bold;");
 
-            item.getChildren().addAll(name, spacer, role);
+            item.getChildren().addAll(avatarCircle, name, spacer, role);
             vboxJugadores.getChildren().add(item);
         }
 
@@ -89,11 +106,42 @@ public class SalaController implements ClientSocket.ServerObserver {
 
         if (soyAnfitrion) {
             btnAccion.setText("INICIAR PARTIDA");
-            btnAccion.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-background-radius: 10;");
+            boolean todosListos = partida.getJugadores().stream()
+                    .filter(j -> !j.isEsAnfitrion())
+                    .allMatch(Jugador::isListo);
+            boolean suficientes = partida.getJugadores().size() >= 2;
+            boolean puedeIniciar = todosListos && suficientes;
+            if (puedeIniciar) {
+                btnAccion.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+                btnAccion.setDisable(false);
+            } else {
+                btnAccion.setStyle("-fx-background-color: #9ca3af; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+                btnAccion.setDisable(true);
+            }
         } else {
-            btnAccion.setText("ESTOY LISTO!!");
-            btnAccion.setStyle("-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-background-radius: 10;");
+            Jugador yo = partida.getJugadores().stream()
+                    .filter(j -> j.getNombre().equals(miNombre))
+                    .findFirst().orElse(null);
+            boolean estoyListo = yo != null && yo.isListo();
+            if (estoyListo) {
+                btnAccion.setText("¡LISTO!");
+                btnAccion.setStyle("-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+            } else {
+                btnAccion.setText("ESTOY LISTO!!");
+                btnAccion.setStyle("-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+            }
+            btnAccion.setDisable(false);
         }
+    }
+
+    private String mapAvatarToCss(Avatar avatar) {
+        if (avatar == null) return "#9ca3af";
+        return switch (avatar) {
+            case AZUL -> "#3b82f6";
+            case AMARILLO -> "#facc15";
+            case ROJO -> "#ef4444";
+            case VERDE -> "#22c55e";
+        };
     }
 
     private void actualizarEstiloBotonesMax(int max) {
@@ -113,12 +161,47 @@ public class SalaController implements ClientSocket.ServerObserver {
     @FXML
     private void onAbandonar() {
         ClientSocket.getInstance().enviar("ABANDONAR_SALA", null);
-        cambiarVista(SceneManager.VIEW_REGISTRO);
+        new Thread(() -> {
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            ClientSocket.getInstance().desconectar();
+            Platform.runLater(() -> cambiarVista(SceneManager.VIEW_REGISTRO));
+        }).start();
     }
 
     @FXML
     private void onAccionPrincipal() {
-        ClientSocket.getInstance().enviar("INICIAR_PARTIDA", null);
+        Jugador yo = EstadoCliente.getInstance().getJugadorLocal();
+        if (yo == null) return;
+
+        if (yo.isEsAnfitrion()) {
+            Partida partida = EstadoCliente.getInstance().getPartidaActual();
+            if (partida == null) return;
+
+            boolean todosListos = partida.getJugadores().stream()
+                    .filter(j -> !j.isEsAnfitrion())
+                    .allMatch(Jugador::isListo);
+
+            if (!todosListos) {
+                mostrarAlerta("Esperando jugadores", "Aún hay jugadores que no han marcado 'Listo'");
+                return;
+            }
+            if (partida.getJugadores().size() < 2) {
+                mostrarAlerta("Faltan jugadores", "Se necesitan al menos 2 jugadores para iniciar");
+                return;
+            }
+            ClientSocket.getInstance().enviar("INICIAR_PARTIDA", null);
+        } else {
+            ClientSocket.getInstance().enviar("MARCAR_LISTO", null);
+        }
+    }
+
+    private void mostrarAlerta(String titulo, String mensaje) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.WARNING);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
     }
 
     private void cambiarVista(String vista) {

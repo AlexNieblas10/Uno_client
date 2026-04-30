@@ -199,7 +199,11 @@ public class JuegoController implements ClientSocket.ServerObserver {
     @FXML
     private void onAbandonar() {
         ClientSocket.getInstance().enviar("ABANDONAR_SALA", null);
-        cambiarVista(SceneManager.VIEW_REGISTRO);
+        new Thread(() -> {
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            ClientSocket.getInstance().desconectar();
+            Platform.runLater(() -> cambiarVista(SceneManager.VIEW_REGISTRO));
+        }).start();
     }
 
     private void mostrarFinDeJuego(Partida partida) {

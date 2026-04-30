@@ -3,92 +3,103 @@ package org.borradoruno.controller;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import org.borradoruno.config.ServerConfig;
+import org.borradoruno.model.Avatar;
 import org.borradoruno.model.EstadoCliente;
 import org.borradoruno.navigation.SceneManager;
 import org.borradoruno.network.ClientSocket;
 import org.borradoruno.network.Mensaje;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class RegistroController implements ClientSocket.ServerObserver {
 
     @FXML private TextField txtApodo;
-    @FXML private TextField txtIp;
+    @FXML private Button btnAvatarAzul;
+    @FXML private Button btnAvatarAmarillo;
+    @FXML private Button btnAvatarRojo;
+    @FXML private Button btnAvatarVerde;
 
+    private Avatar avatarSeleccionado = Avatar.AZUL;
     private boolean intentandoLogin = false;
 
     @FXML
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
-
-        String savedIP = ServerConfig.getServerIP();
-        if (savedIP != null && !savedIP.isEmpty()) {
-            txtIp.setText(savedIP);
-        }
+        actualizarBordeAvatar();
     }
 
-    private void conectarAlServidor() throws IOException {
-        String ip = txtIp.getText().trim();
-        int port = ServerConfig.getServerPort();
-        ClientSocket.getInstance().conectar(ip, port);
+    @FXML private void onSeleccionarAvatarAzul()     { avatarSeleccionado = Avatar.AZUL;     actualizarBordeAvatar(); }
+    @FXML private void onSeleccionarAvatarAmarillo() { avatarSeleccionado = Avatar.AMARILLO; actualizarBordeAvatar(); }
+    @FXML private void onSeleccionarAvatarRojo()     { avatarSeleccionado = Avatar.ROJO;     actualizarBordeAvatar(); }
+    @FXML private void onSeleccionarAvatarVerde()    { avatarSeleccionado = Avatar.VERDE;    actualizarBordeAvatar(); }
+
+    private void actualizarBordeAvatar() {
+        String borde = "-fx-border-color: #1d4ed8; -fx-border-width: 3; -fx-border-radius: 8;";
+        btnAvatarAzul.setStyle("-fx-background-color: #3b82f6; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"
+                + (avatarSeleccionado == Avatar.AZUL ? borde : ""));
+        btnAvatarAmarillo.setStyle("-fx-background-color: #facc15; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"
+                + (avatarSeleccionado == Avatar.AMARILLO ? borde : ""));
+        btnAvatarRojo.setStyle("-fx-background-color: #ef4444; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"
+                + (avatarSeleccionado == Avatar.ROJO ? borde : ""));
+        btnAvatarVerde.setStyle("-fx-background-color: #22c55e; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"
+                + (avatarSeleccionado == Avatar.VERDE ? borde : ""));
     }
 
     @FXML
     private void onCrearPartida() {
-        if (!validarEntradas()) return;
+        if (!validarApodo()) return;
 
         String apodo = txtApodo.getText().trim();
-        String ip = txtIp.getText().trim();
-
         try {
-            conectarAlServidor();
+            ClientSocket.getInstance().conectar(ServerConfig.getServerIP(), ServerConfig.getServerPort());
             intentandoLogin = true;
             EstadoCliente.getInstance().setNombreLocal(apodo);
-            ClientSocket.getInstance().enviar("CREATE", apodo);
-            ServerConfig.setServerIP(ip);
+            EstadoCliente.getInstance().setAvatarLocal(avatarSeleccionado);
+            ClientSocket.getInstance().enviar("CREATE", new Object[]{apodo, avatarSeleccionado.name()});
         } catch (IOException e) {
-            mostrarError("Error de Conexión", "No se pudo conectar al servidor en " + ip);
+            mostrarError("Error de Conexión", "No se pudo conectar al servidor");
             intentandoLogin = false;
         }
     }
 
     @FXML
     private void onUnirsePartida() {
-        if (!validarEntradas()) return;
+        if (!validarApodo()) return;
+
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Unirse a partida");
+        dialog.setHeaderText("Código de la sala");
+        dialog.setContentText("Ingresa el código (ej. UNO-1234):");
+
+        Optional<String> resultado = dialog.showAndWait();
+        if (resultado.isEmpty()) return;
+
+        String codigo = resultado.get().trim().toUpperCase();
+        if (codigo.isEmpty()) {
+            mostrarError("Código inválido", "Debes ingresar un código de sala");
+            return;
+        }
 
         String apodo = txtApodo.getText().trim();
-        String ip = txtIp.getText().trim();
-
         try {
-            conectarAlServidor();
+            ClientSocket.getInstance().conectar(ServerConfig.getServerIP(), ServerConfig.getServerPort());
             intentandoLogin = true;
             EstadoCliente.getInstance().setNombreLocal(apodo);
-            ClientSocket.getInstance().enviar("JOIN", apodo);
-            ServerConfig.setServerIP(ip);
+            EstadoCliente.getInstance().setAvatarLocal(avatarSeleccionado);
+            ClientSocket.getInstance().enviar("JOIN", new Object[]{apodo, codigo, avatarSeleccionado.name()});
         } catch (IOException e) {
-            mostrarError("Error de Conexión", "No se pudo conectar al servidor en " + ip);
+            mostrarError("Error de Conexión", "No se pudo conectar al servidor");
             intentandoLogin = false;
         }
     }
 
-    @Override
-    public void onMensajeRecibido(Mensaje mensaje) {
-        if (mensaje.getTipo().equals("ESTADO_PARTIDA") && intentandoLogin) {
-            cambiarVista(SceneManager.VIEW_SALA);
-            intentandoLogin = false;
-        } else if (mensaje.getTipo().equals("ERROR") && intentandoLogin) {
-            String errorMsg = mensaje.getDatos() != null ? mensaje.getDatos().toString() : "Error desconocido";
-            mostrarError("Error del Servidor", errorMsg);
-            intentandoLogin = false;
-        }
-    }
-
-    private boolean validarEntradas() {
+    private boolean validarApodo() {
         String apodo = txtApodo.getText().trim();
-        String ip = txtIp.getText().trim();
-
         if (apodo.isEmpty()) {
             mostrarError("Apodo Inválido", "El apodo no puede estar vacío");
             return false;
@@ -98,26 +109,23 @@ public class RegistroController implements ClientSocket.ServerObserver {
             return false;
         }
         if (!apodo.matches("^[a-zA-Z0-9_-]+$")) {
-            mostrarError("Apodo Inválido",
-                    "El apodo solo puede contener letras, números, guión (-) y guión bajo (_)");
-            return false;
-        }
-        if (ip.isEmpty()) {
-            mostrarError("Dirección Inválida", "La dirección del servidor no puede estar vacía");
-            return false;
-        }
-        if (ip.equals("localhost") || ip.equals("127.0.0.1")) {
-            return true;
-        }
-        String ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}"
-                + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-        String hostnamePattern = "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$";
-        if (!ip.matches(ipv4Pattern) && !ip.matches(hostnamePattern)) {
-            mostrarError("Dirección Inválida",
-                    "Formato inválido.\nUsa: 192.168.1.1, localhost o example.com");
+            mostrarError("Apodo Inválido", "Solo letras, números, guión y guión bajo");
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void onMensajeRecibido(Mensaje mensaje) {
+        if (mensaje.getTipo().equals("ESTADO_PARTIDA") && intentandoLogin) {
+            intentandoLogin = false;
+            ClientSocket.getInstance().removeObserver(this);
+            SceneManager.getInstance().cambiarVista(SceneManager.VIEW_SALA);
+        } else if (mensaje.getTipo().equals("ERROR") && intentandoLogin) {
+            String msg = mensaje.getDatos() != null ? mensaje.getDatos().toString() : "Error desconocido";
+            mostrarError("Error del Servidor", msg);
+            intentandoLogin = false;
+        }
     }
 
     private void mostrarError(String titulo, String mensaje) {
@@ -128,10 +136,5 @@ public class RegistroController implements ClientSocket.ServerObserver {
             alert.setContentText(mensaje);
             alert.showAndWait();
         });
-    }
-
-    private void cambiarVista(String vista) {
-        ClientSocket.getInstance().removeObserver(this);
-        SceneManager.getInstance().cambiarVista(vista);
     }
 }
