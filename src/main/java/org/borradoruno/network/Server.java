@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
-    private static final int PORT = 12345;
+    private static final int PORT = 443;
     private List<ClientHandler> clientes;
 
     public Server() {

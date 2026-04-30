@@ -1,0 +1,56 @@
+package org.borradoruno.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Jugador {
+    private String nombre;
+    private String idSesion;
+    private boolean esAnfitrion;
+    private boolean dijoUNO;
+    private boolean listo;
+    private int puntos;
+    private List<Carta> mano;
+    private Avatar avatar;
+
+    public Jugador(String nombre, String idSesion) {
+        this.nombre = nombre;
+        this.idSesion = idSesion;
+        this.esAnfitrion = false;
+        this.dijoUNO = false;
+        this.listo = false;
+        this.puntos = 0;
+        this.mano = new ArrayList<>();
+        this.avatar = Avatar.AZUL;
+    }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getIdSesion() { return idSesion; }
+    public void setIdSesion(String idSesion) { this.idSesion = idSesion; }
+    public boolean isEsAnfitrion() { return esAnfitrion; }
+    public void setEsAnfitrion(boolean esAnfitrion) { this.esAnfitrion = esAnfitrion; }
+    public boolean isDijoUNO() { return dijoUNO; }
+    public void setDijoUNO(boolean dijoUNO) { this.dijoUNO = dijoUNO; }
+    public boolean isListo() { return listo; }
+    public void setListo(boolean listo) { this.listo = listo; }
+    public int getPuntos() { return puntos; }
+    public void setPuntos(int puntos) { this.puntos = puntos; }
+    public List<Carta> getMano() { return mano; }
+    public void setMano(List<Carta> mano) { this.mano = mano; }
+    public Avatar getAvatar() { return avatar; }
+    public void setAvatar(Avatar avatar) { this.avatar = avatar; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Jugador jugador = (Jugador) o;
+        return java.util.Objects.equals(nombre, jugador.nombre);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(nombre);
+    }
+}
