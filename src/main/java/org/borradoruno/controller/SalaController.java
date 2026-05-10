@@ -36,7 +36,6 @@ public class SalaController implements ClientSocket.ServerObserver {
     @FXML
     public void initialize() {
         ClientSocket.getInstance().addObserver(this);
-
         MusicManager.getInstance().play(MusicManager.MUSIC_MENU);
 
         if (sliderMusica != null) {
@@ -50,36 +49,40 @@ public class SalaController implements ClientSocket.ServerObserver {
                     SoundManager.getInstance().setVolumen(newVal.doubleValue() / 100.0));
         }
 
-        // Si el controller anterior ya guardó el estado, mostrarlo de inmediato sin esperar al servidor
         Partida estadoActual = EstadoCliente.getInstance().getPartidaActual();
         if (estadoActual != null) {
             Platform.runLater(() -> actualizarInterfaz(estadoActual));
         }
 
-        // Pedir estado fresco de todas formas (puede haber cambiado mientras cargaba la vista)
         ClientSocket.getInstance().enviar("SOLICITAR_ESTADO", null);
     }
 
     @Override
     public void onMensajeRecibido(Mensaje mensaje) {
-        if (mensaje.getTipo().equals("ESTADO_PARTIDA")) {
-            Partida partidaAnterior = EstadoCliente.getInstance().getPartidaActual();
-            Partida partida = MensajeParser.parsearPartida(mensaje.getDatos());
-            EstadoCliente.getInstance().setPartidaActual(partida);
+        switch (mensaje.getTipo()) {
+            case "ESTADO_PARTIDA" -> {
+                Partida partidaAnterior = EstadoCliente.getInstance().getPartidaActual();
+                Partida partida = MensajeParser.parsearPartida(mensaje.getDatos());
+                EstadoCliente.getInstance().setPartidaActual(partida);
 
-            boolean partidaAcabaDeIniciar =
-                    partida.getEstado() == EstadoPartida.EN_CURSO
-                    && (partidaAnterior == null
-                        || partidaAnterior.getEstado() != EstadoPartida.EN_CURSO);
+                boolean partidaAcabaDeIniciar =
+                        partida.getEstado() == EstadoPartida.EN_CURSO
+                        && (partidaAnterior == null
+                            || partidaAnterior.getEstado() != EstadoPartida.EN_CURSO);
 
-            if (partidaAcabaDeIniciar) {
-                SoundManager.getInstance().play(SoundManager.SOUND_SHUFFLE);
+                if (partidaAcabaDeIniciar) {
+                    SoundManager.getInstance().play(SoundManager.SOUND_SHUFFLE);
+                }
+
+                Platform.runLater(() -> actualizarInterfaz(partida));
+
+                if (partida.getEstado() == EstadoPartida.EN_CURSO) {
+                    cambiarVista(SceneManager.VIEW_JUEGO);
+                }
             }
-
-            Platform.runLater(() -> actualizarInterfaz(partida));
-
-            if (partida.getEstado() == EstadoPartida.EN_CURSO) {
-                cambiarVista(SceneManager.VIEW_JUEGO);
+            case "ERROR" -> {
+                String error = MensajeParser.parsearString(mensaje.getDatos());
+                Platform.runLater(() -> mostrarAlerta("Error de configuración", error));
             }
         }
     }
@@ -107,18 +110,8 @@ public class SalaController implements ClientSocket.ServerObserver {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
-            String estadoTexto;
-            String estadoColor;
-            if (j.isEsAnfitrion()) {
-                estadoTexto = "Anfitrión";
-                estadoColor = "#ef4444";
-            } else if (j.isListo()) {
-                estadoTexto = "Listo!";
-                estadoColor = "#22c55e";
-            } else {
-                estadoTexto = "Pendiente";
-                estadoColor = "#9ca3af";
-            }
+            String estadoTexto = j.isEsAnfitrion() ? "Anfitrión" : "Jugador";
+            String estadoColor = j.isEsAnfitrion() ? "#ef4444" : "#9ca3af";
             Label role = new Label(estadoTexto);
             role.setStyle("-fx-text-fill: " + estadoColor + "; -fx-font-weight: bold;");
 
@@ -152,12 +145,8 @@ public class SalaController implements ClientSocket.ServerObserver {
             btnAccion.setDisable(true);
         } else if (soyAnfitrion) {
             btnAccion.setText("INICIAR PARTIDA");
-            boolean todosListos = partida.getJugadores().stream()
-                    .filter(j -> !j.isEsAnfitrion())
-                    .allMatch(Jugador::isListo);
             boolean suficientes = partida.getJugadores().size() >= 2;
-            boolean puedeIniciar = todosListos && suficientes;
-            if (puedeIniciar) {
+            if (suficientes) {
                 btnAccion.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
                 btnAccion.setDisable(false);
             } else {
@@ -165,18 +154,9 @@ public class SalaController implements ClientSocket.ServerObserver {
                 btnAccion.setDisable(true);
             }
         } else {
-            Jugador yo = partida.getJugadores().stream()
-                    .filter(j -> j.getNombre().equals(miNombre))
-                    .findFirst().orElse(null);
-            boolean estoyListo = yo != null && yo.isListo();
-            if (estoyListo) {
-                btnAccion.setText("¡LISTO!");
-                btnAccion.setStyle("-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
-            } else {
-                btnAccion.setText("ESTOY LISTO!!");
-                btnAccion.setStyle("-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
-            }
-            btnAccion.setDisable(false);
+            btnAccion.setText("ESPERANDO ANFITRIÓN...");
+            btnAccion.setStyle("-fx-background-color: #9ca3af; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;");
+            btnAccion.setDisable(true);
         }
     }
 
@@ -200,9 +180,26 @@ public class SalaController implements ClientSocket.ServerObserver {
         if (btnMax4 != null) btnMax4.setStyle(max == 4 ? selected : unselected);
     }
 
-    @FXML private void onSetMax2() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 2); }
-    @FXML private void onSetMax3() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 3); }
-    @FXML private void onSetMax4() { SoundManager.getInstance().play(SoundManager.SOUND_CLICK); ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 4); }
+    @FXML
+    private void onSetMax2() {
+        System.out.println("[ConfigurarPartida] Solicitando SET_MAX_JUGADORES: 2");
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 2);
+    }
+
+    @FXML
+    private void onSetMax3() {
+        System.out.println("[ConfigurarPartida] Solicitando SET_MAX_JUGADORES: 3");
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 3);
+    }
+
+    @FXML
+    private void onSetMax4() {
+        System.out.println("[ConfigurarPartida] Solicitando SET_MAX_JUGADORES: 4");
+        SoundManager.getInstance().play(SoundManager.SOUND_CLICK);
+        ClientSocket.getInstance().enviar("SET_MAX_JUGADORES", 4);
+    }
 
     @FXML
     private void onAbandonar() {
@@ -221,28 +218,17 @@ public class SalaController implements ClientSocket.ServerObserver {
         Partida partida = EstadoCliente.getInstance().getPartidaActual();
         if (yo == null || partida == null) return;
 
-        // Partida terminada: solo el anfitrión puede reiniciar
         if (partida.getEstado() == EstadoPartida.FINALIZADA && yo.isEsAnfitrion()) {
             ClientSocket.getInstance().enviar("REINICIAR_PARTIDA", null);
             return;
         }
 
         if (yo.isEsAnfitrion()) {
-            boolean todosListos = partida.getJugadores().stream()
-                    .filter(j -> !j.isEsAnfitrion())
-                    .allMatch(Jugador::isListo);
-
-            if (!todosListos) {
-                mostrarAlerta("Esperando jugadores", "Aún hay jugadores que no han marcado 'Listo'");
-                return;
-            }
             if (partida.getJugadores().size() < 2) {
-                mostrarAlerta("Faltan jugadores", "Se necesitan al menos 2 jugadores para iniciar");
+                mostrarAlerta("Faltan jugadores", "Se necesitan al menos 2 jugadores para iniciar.");
                 return;
             }
             ClientSocket.getInstance().enviar("INICIAR_PARTIDA", null);
-        } else {
-            ClientSocket.getInstance().enviar("MARCAR_LISTO", null);
         }
     }
 

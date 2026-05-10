@@ -504,6 +504,8 @@ public class JuegoController implements ClientSocket.ServerObserver {
     // ── Acciones ──────────────────────────────────────────────────────────────
 
     private void onTirarCarta(Carta carta) {
+        System.out.println("[RealizarJugada] " + EstadoCliente.getInstance().getNombreLocal()
+                + " tirando carta: " + carta.getColor() + " " + carta.getValor());
         if (carta.getColor() == Color.NEGRO) {
             mostrarSelectorColor(carta);
         } else {
@@ -558,6 +560,7 @@ public class JuegoController implements ClientSocket.ServerObserver {
 
     @FXML
     private void onRobarCarta() {
+        System.out.println("[RealizarJugada] " + EstadoCliente.getInstance().getNombreLocal() + " roba carta");
         SoundManager.getInstance().play(SoundManager.SOUND_CARD_DRAW);
         ClientSocket.getInstance().enviar("ROBAR_CARTA", null);
     }
