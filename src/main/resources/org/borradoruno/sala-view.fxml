@@ -12,18 +12,25 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
-    <!-- Configuración (Solo visible para anfitrión) -->
-    <VBox fx:id="vboxConfig" spacing="10" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;" prefWidth="220">
-        <Text text="Configurar partida" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
-        <Label text="Jugadores máximos"/>
+    <!-- ⭐ Configurar Partida (Solo visible para anfitrión) -->
+    <VBox fx:id="vboxConfig" spacing="10"
+          style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #3b82f6; -fx-border-width: 2; -fx-border-radius: 10;"
+          prefWidth="240">
+        <Text text="⭐ Configurar Partida" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-fill: #1d4ed8;"/>
+        <Label text="Máximo de jugadores admitidos:" style="-fx-font-size: 12; -fx-text-fill: #374151;"/>
         <HBox spacing="10">
-            <Button fx:id="btnMax2" text="2" onAction="#onSetMax2" style="-fx-min-width: 40; -fx-background-radius: 5;"/>
-            <Button fx:id="btnMax3" text="3" onAction="#onSetMax3" style="-fx-min-width: 40; -fx-background-radius: 5;"/>
-            <Button fx:id="btnMax4" text="4" onAction="#onSetMax4" style="-fx-min-width: 40; -fx-background-radius: 5;"/>
+            <Button fx:id="btnMax2" text="2" onAction="#onSetMax2"
+                    style="-fx-min-width: 60; -fx-min-height: 40; -fx-font-weight: bold; -fx-background-radius: 5;"/>
+            <Button fx:id="btnMax3" text="3" onAction="#onSetMax3"
+                    style="-fx-min-width: 60; -fx-min-height: 40; -fx-font-weight: bold; -fx-background-radius: 5;"/>
+            <Button fx:id="btnMax4" text="4" onAction="#onSetMax4"
+                    style="-fx-min-width: 60; -fx-min-height: 40; -fx-font-weight: bold; -fx-background-radius: 5;"/>
         </HBox>
-        <Label text="Código de sala"/>
-        <TextField fx:id="txtCodigoSala" editable="false" style="-fx-background-color: #f3f4f6;"/>
-        <Button text="CANCELAR" onAction="#onAbandonar" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-min-width: 200; -fx-background-radius: 10; -fx-padding: 10 0;"/>
+        <Label text="Código de sala:" style="-fx-font-size: 12; -fx-text-fill: #6b7280;"/>
+        <TextField fx:id="txtCodigoSala" editable="false"
+                   style="-fx-background-color: #f3f4f6; -fx-font-weight: bold; -fx-font-size: 14;"/>
+        <Button text="ABANDONAR SALA" onAction="#onAbandonar"
+                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 200; -fx-background-radius: 10; -fx-padding: 10 0;"/>
     </VBox>
 
     <!-- Lista de Jugadores -->
@@ -33,15 +40,17 @@
             <Label fx:id="lblContador" text="(1/4)"/>
         </HBox>
 
-        <VBox fx:id="vboxJugadores" spacing="5">
-            <!-- Los jugadores se cargarán dinámicamente -->
-        </VBox>
+        <VBox fx:id="vboxJugadores" spacing="5"/>
 
-        <Label fx:id="lblEstado" text="esperando a los jugadores..." style="-fx-text-fill: gray;"/>
+        <Label fx:id="lblEstado" text="Esperando jugadores..." style="-fx-text-fill: gray;"/>
+
         <Button fx:id="btnAccion" text="INICIAR PARTIDA" onAction="#onAccionPrincipal"
-                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-background-radius: 10;"/>
+                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-min-height: 45; -fx-background-radius: 10; -fx-font-size: 14;"/>
 
-        <!-- Volumen: visible para todos -->
+        <!-- Abandonar para no-anfitriones (vboxConfig está oculto para ellos) -->
+        <Button text="ABANDONAR SALA" onAction="#onAbandonar"
+                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 250; -fx-background-radius: 10; -fx-padding: 8 0;"/>
+
         <Label text="Volumen música" style="-fx-padding: 10 0 0 0; -fx-text-fill: #6b7280; -fx-font-size: 12;"/>
         <Slider fx:id="sliderMusica" min="0" max="100" value="40" showTickLabels="true" majorTickUnit="50"/>
         <Label text="Volumen efectos" style="-fx-text-fill: #6b7280; -fx-font-size: 12;"/>
