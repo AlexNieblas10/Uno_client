@@ -5,7 +5,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.text.Text?>
 
-<!-- STUB: Caso de uso "Registrar Jugador" disponible en rama feature/registrar-jugador -->
 <VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.borradoruno.controller.RegistroController"
       style="-fx-background-color: #f8c8cb;">
@@ -13,22 +12,30 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
-    <VBox spacing="15" style="-fx-background-color: white; -fx-padding: 40; -fx-background-radius: 10;" maxWidth="500">
-        <Text text="UNO Online" style="-fx-font-size: 28; -fx-font-weight: bold;"/>
-        <Text text="Registro de jugador no disponible en esta rama."
-              style="-fx-fill: #6b7280; -fx-font-size: 14;"/>
-        <Text text="Ver implementación completa en:"
-              style="-fx-fill: #374151;"/>
-        <Text text="feature/registrar-jugador"
-              style="-fx-fill: #1d4ed8; -fx-font-weight: bold; -fx-font-size: 13;"/>
+    <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10;" maxWidth="500">
+        <Text text="Registrar usuario" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+        <Text text="Personaliza tu perfil antes de jugar" style="-fx-fill: #6b7280;"/>
 
-        <Button text="CREAR PARTIDA" onAction="#onCrearPartida"
-                style="-fx-background-color: #d1d5db; -fx-text-fill: #9ca3af; -fx-font-weight: bold; -fx-min-width: 260; -fx-min-height: 45; -fx-background-radius: 8; -fx-font-size: 14;"
-                disable="true"/>
-        <Button text="UNIRSE A PARTIDA" onAction="#onUnirsePartida"
-                style="-fx-background-color: #d1d5db; -fx-text-fill: #9ca3af; -fx-font-weight: bold; -fx-min-width: 260; -fx-min-height: 45; -fx-background-radius: 8; -fx-font-size: 14;"
-                disable="true"/>
+        <Label text="Apodo de Jugador" style="-fx-padding: 10 0 0 0;"/>
+        <TextField fx:id="txtApodo" promptText="Tu nombre aquí"/>
+
+        <Label text="Elige tu Avatar" style="-fx-padding: 15 0 0 0;"/>
+        <HBox spacing="10" fx:id="hboxAvatares">
+            <Button fx:id="btnAvatarAzul" onAction="#onSeleccionarAvatarAzul"
+                    style="-fx-background-color: #3b82f6; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"/>
+            <Button fx:id="btnAvatarAmarillo" onAction="#onSeleccionarAvatarAmarillo"
+                    style="-fx-background-color: #facc15; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"/>
+            <Button fx:id="btnAvatarRojo" onAction="#onSeleccionarAvatarRojo"
+                    style="-fx-background-color: #ef4444; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"/>
+            <Button fx:id="btnAvatarVerde" onAction="#onSeleccionarAvatarVerde"
+                    style="-fx-background-color: #22c55e; -fx-min-width: 50; -fx-min-height: 50; -fx-background-radius: 8;"/>
+        </HBox>
     </VBox>
+
+    <Button text="UNIRSE A PARTIDA" onAction="#onUnirsePartida"
+            style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 300; -fx-min-height: 45; -fx-background-radius: 8; -fx-font-size: 14;"/>
+    <Button text="CREAR PARTIDA" onAction="#onCrearPartida"
+            style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 300; -fx-min-height: 45; -fx-background-radius: 8; -fx-font-size: 14;"/>
 
     <Text text="© 2026 Uno Online 1.12v" style="-fx-fill: gray;"/>
 </VBox>

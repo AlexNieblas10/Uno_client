@@ -34,9 +34,8 @@ public class ClientSocket {
     }
 
     public void conectar(String host, int puerto) throws IOException {
-        if (socket != null && !socket.isClosed()) {
-            return;
-        }
+        // Forzar desconexión previa para asegurar una sesión limpia
+        desconectar();
 
         IOException ultimoError = null;
         int[] intervalos = {0, 1000, 2000}; // ms de espera antes de cada reintento
@@ -110,7 +109,6 @@ public class ClientSocket {
         try { if (in != null) in.close(); } catch (Exception ignored) {}
         try { if (socket != null && !socket.isClosed()) socket.close(); } catch (Exception ignored) {}
 
-        observers.clear();
         System.out.println("[ClientSocket] Desconectado");
     }
 

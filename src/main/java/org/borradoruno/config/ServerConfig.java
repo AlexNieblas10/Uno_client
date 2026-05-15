@@ -8,10 +8,10 @@ import java.util.prefs.Preferences;
  */
 public class ServerConfig {
     private static final Preferences prefs = Preferences.userNodeForPackage(ServerConfig.class);
-    private static final String KEY_SERVER_IP = "server_ip_v3";
-    private static final String KEY_SERVER_PORT = "server_port_v3";
-    private static final String DEFAULT_IP = "149.248.194.8";
-    private static final int DEFAULT_PORT = 12345;
+    private static final String KEY_SERVER_IP = "server_ip_v4";
+    private static final String KEY_SERVER_PORT = "server_port_v4";
+    private static final String DEFAULT_IP = "shinkansen.proxy.rlwy.net";
+    private static final int DEFAULT_PORT = 53312;
 
     /**
      * Obtiene la IP del servidor guardada o retorna localhost
