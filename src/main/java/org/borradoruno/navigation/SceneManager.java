@@ -15,6 +15,7 @@ public class SceneManager {
 
     public static final String VIEW_REGISTRO = "/org/borradoruno/registro-view.fxml";
     public static final String VIEW_SALA = "/org/borradoruno/sala-view.fxml";
+    public static final String VIEW_INICIAR_PARTIDA = "/org/borradoruno/iniciar-partida-view.fxml";
     public static final String VIEW_JUEGO = "/org/borradoruno/juego-view.fxml";
 
     private static final int DEFAULT_WIDTH = 800;
