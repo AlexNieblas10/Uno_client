@@ -240,7 +240,7 @@ public class SalaController implements ClientSocket.ServerObserver {
                 mostrarAlerta("Faltan jugadores", "Se necesitan al menos 2 jugadores para iniciar");
                 return;
             }
-            ClientSocket.getInstance().enviar("INICIAR_PARTIDA", null);
+            cambiarVista(SceneManager.VIEW_INICIAR_PARTIDA);
         } else {
             ClientSocket.getInstance().enviar("MARCAR_LISTO", null);
         }
